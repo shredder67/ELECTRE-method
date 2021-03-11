@@ -43,7 +43,7 @@ def build_rate_table(table, tendencies, weights, borders):
         i += 1
 
 
-def build_ratio_matrix(table):
+def build_ratio_matrix(table, weights):
     matrix = [['X' for _ in range(len(table))] for _ in range(len(table))]
 
     i = 0
@@ -52,7 +52,7 @@ def build_ratio_matrix(table):
         j = 0
         while j < i:
             if not isinstance(matrix[i][j], float) and matrix[i][j] not in ['N', 'inf']:
-                res, value = compare_alt(i, j, table)
+                res, value = compare_alt(i, j, table, weights)
                 if res == i:
                     matrix[i][j] = value
                     matrix[j][i] = 'N' 
@@ -63,6 +63,34 @@ def build_ratio_matrix(table):
         i += 1
     
     return matrix
+
+
+#сравнение двух альтернатив, возвращает индекс доминирующей и полученное отношение
+def compare_alt(dominant, suppressed, table, weights):
+    P_ij = 0
+    N_ij = 0
+    P_ji = 0
+    N_ji = 0
+
+    i = 0
+    while i < len(table[dominant]):
+        if table[dominant][i] > table[suppressed][i]:
+            P_ij += weights[i]
+            N_ji += weights[i]
+        elif table[dominant][i] < table[suppressed][i]:
+            N_ij += weights[i]
+            P_ji += weights[i]
+        i += 1
+
+    if N_ij == 0:
+        return dominant, 'inf'
+    elif N_ji == 0:
+        return suppressed, 'inf'
+    
+    D_ij = round(P_ij / N_ij, 2)
+    D_ji = round(P_ji / N_ji, 2)
+
+    return (dominant, D_ij) if D_ij > 1 else (suppressed, D_ji)
 
 
 def build_graph(matrix, C):
@@ -97,34 +125,6 @@ def build_graph(matrix, C):
     plt.show()
 
 
-#сравнение двух альтернатив, возвращает индекс доминирующей и полученное отношение
-def compare_alt(dominant, suppressed, table):
-    P_ij = 0
-    N_ij = 0
-    P_ji = 0
-    N_ji = 0
-
-    i = 0
-    while i < len(table[dominant]):
-        if table[dominant][i] > table[suppressed][i]:
-            P_ij += table[dominant][i]
-            N_ji += table[dominant][i]
-        elif table[dominant][i] < table[suppressed][i]:
-            N_ij += table[suppressed][i]
-            P_ji += table[suppressed][i]
-        i += 1
-
-    if N_ij == 0:
-        return dominant, 'inf'
-    elif N_ji == 0:
-        return suppressed, 'inf'
-    
-    D_ij = round(P_ij / N_ij, 2)
-    D_ji = round(P_ji / N_ji, 2)
-
-    return (dominant, D_ij) if D_ij > 1 else (suppressed, D_ji)
-
-
 with open('pr2_data.json', encoding='utf-8') as json_file:
     content = json.load(json_file)
     data = content["data"]
@@ -137,6 +137,6 @@ with open('pr2_data.json', encoding='utf-8') as json_file:
     print_table(table)
     build_rate_table(table, tendencies, weights, borders)
     print_table(table)
-    matrix = build_ratio_matrix(table)
+    matrix = build_ratio_matrix(table, weights)
     print_table(matrix)
-    build_graph(matrix, 3.5)
+    build_graph(matrix, 1.7)
