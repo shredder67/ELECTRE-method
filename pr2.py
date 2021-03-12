@@ -69,26 +69,22 @@ def build_ratio_matrix(table, weights):
 def compare_alt(dominant, suppressed, table, weights):
     P_ij = 0
     N_ij = 0
-    P_ji = 0
-    N_ji = 0
 
     i = 0
     while i < len(table[dominant]):
         if table[dominant][i] > table[suppressed][i]:
             P_ij += weights[i]
-            N_ji += weights[i]
         elif table[dominant][i] < table[suppressed][i]:
             N_ij += weights[i]
-            P_ji += weights[i]
         i += 1
 
     if N_ij == 0:
         return dominant, 'inf'
-    elif N_ji == 0:
+    elif P_ij == 0:
         return suppressed, 'inf'
     
     D_ij = round(P_ij / N_ij, 2)
-    D_ji = round(P_ji / N_ji, 2)
+    D_ji = round(N_ij / P_ij, 2)
 
     return (dominant, D_ij) if D_ij > 1 else (suppressed, D_ji)
 
@@ -105,6 +101,8 @@ def build_graph(matrix, C):
             else:
                 filtered_matrix[i].append(el)
         i += 1
+
+    print_table(filtered_matrix)
 
     G = nx.DiGraph()
     G.add_nodes_from(range(1, 10))
