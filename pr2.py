@@ -44,49 +44,53 @@ def build_rate_table(table, tendencies, weights, borders):
 
 
 def build_ratio_matrix(table, weights):
-    matrix = [['X' for _ in range(len(table))] for _ in range(len(table))]
+    matrix = [['-' for _ in range(len(table))] for _ in range(len(table))]
 
     i = 0
     j = 0
     while i < len(matrix):
         j = 0
         while j < i:
-            if not isinstance(matrix[i][j], float) and matrix[i][j] not in ['N', 'inf']:
+            if not isinstance(matrix[i][j], float) and matrix[i][j] != 'x':
                 res, value = compare_alt(i, j, table, weights)
                 if res == i:
                     matrix[i][j] = value
-                    matrix[j][i] = 'N' 
+                    matrix[j][i] = 'x' 
                 else:
                     matrix[j][i] = value
-                    matrix[i][j] = 'N' 
+                    matrix[i][j] = 'x' 
             j += 1
         i += 1
     
     return matrix
 
 
-#сравнение двух альтернатив, возвращает индекс доминирующей и полученное отношение
+# сравнение двух альтернатив, возвращает индекс доминирующей и полученное отношение
+# dominant, supressed - сравниваемые альтернативы, d - индекс несогласия
 def compare_alt(dominant, suppressed, table, weights):
     P_ij = 0
     N_ij = 0
 
     i = 0
     while i < len(table[dominant]):
-        if table[dominant][i] > table[suppressed][i]:
+        delta = table[dominant][i] - table[suppressed][i]
+
+        if delta > 0:
             P_ij += weights[i]
-        elif table[dominant][i] < table[suppressed][i]:
+        elif delta < 0:
             N_ij += weights[i]
         i += 1
 
     if N_ij == 0:
-        return dominant, 'inf'
+        return dominant, 'N'
     elif P_ij == 0:
-        return suppressed, 'inf'
+        return suppressed, 'N'
     
     D_ij = round(P_ij / N_ij, 2)
     D_ji = round(N_ij / P_ij, 2)
+    res, D = (dominant, D_ij) if D_ij > 1 else (suppressed, D_ji)
 
-    return (dominant, D_ij) if D_ij > 1 else (suppressed, D_ji)
+    return res, D
 
 
 def build_graph(matrix, C):
